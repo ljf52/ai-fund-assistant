@@ -4,6 +4,12 @@
 
 > 本项目仅用于信息整理和投资研究，不构成投资建议，不执行自动交易。盘中估值并非基金管理人公布的正式净值。
 
+## 在线演示
+
+GitHub Pages：<https://ljf52.github.io/ai-fund-assistant/>
+
+在线版本使用虚构示例数据，仅用于体验界面；GitHub Pages 无法运行 FastAPI、SQLite 和 DeepSeek 后端。本地启动版本仍可同步真实数据。
+
 ## 主要功能
 
 - 资产总览：总资产、累计收益、盘中预计今日收益与持仓分布。

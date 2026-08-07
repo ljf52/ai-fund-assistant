@@ -1,8 +1,10 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import * as echarts from 'echarts'
+import { demoRequest } from './demo.js'
 
 const api = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8010/api'
+const demoMode = import.meta.env.VITE_DEMO_MODE === 'true'
 const page = ref('dashboard')
 const loading = ref(true)
 const error = ref('')
@@ -30,6 +32,7 @@ const titles = { dashboard: ['今日资产脉搏', '把市场变化翻译成与�
 function money(v) { return Number(v || 0).toLocaleString('zh-CN', { style: 'currency', currency: 'CNY', minimumFractionDigits: 2 }) }
 function pct(v) { return `${Number(v || 0) > 0 ? '+' : ''}${Number(v || 0).toFixed(2)}%` }
 async function request(path, options) {
+  if (demoMode) return demoRequest(path, options)
   const res = await fetch(`${api}${path}`, { headers: { 'Content-Type': 'application/json' }, ...options })
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || '服务暂时不可用')
   return res.status === 204 ? null : res.json()
@@ -153,6 +156,7 @@ onUnmounted(() => { window.clearInterval(realtimeTimer); window.clearInterval(ma
 
     <main>
       <header><div><p>{{ new Date().toLocaleDateString('zh-CN', {year:'numeric', month:'long', day:'numeric', weekday:'long'}) }}</p><h1>{{ titles[page][0] }}</h1><span>{{ titles[page][1] }}</span></div><div class="data-actions"><div class="data-badge" :class="dashboard.data_status?.mode || 'demo'"><i></i><span>{{ dashboard.data_status?.mode==='real'?'真实数据':dashboard.data_status?.mode==='mixed'?'部分真实':'演示数据' }}</span><small v-if="dashboard.data_status?.funds?.data_date">净值至 {{ dashboard.data_status.funds.data_date }}</small></div><button class="sync-button" :disabled="syncing" @click="syncData">{{ syncing ? '同步中…' : '同步真实数据' }} ↻</button></div></header>
+      <section v-if="demoMode" class="pages-demo-note"><div><b>GitHub Pages 在线演示</b><span>页面使用虚构示例数据，修改不会保存；真实行情与 AI 功能需连接 FastAPI 后端。</span></div><a href="https://github.com/ljf52/ai-fund-assistant" target="_blank" rel="noreferrer">查看源码 ↗</a></section>
       <div v-if="error" class="alert">{{ error }} <button @click="error=''">×</button></div>
       <div v-if="loading" class="loading"><i></i><span>正在整理你的投资信息…</span></div>
 
