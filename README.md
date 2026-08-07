@@ -34,21 +34,16 @@ GitHub Pages：<https://ljf52.github.io/ai-fund-assistant/>
 
 - Python 3.11+
 - Node.js 20+
-- pnpm 9+
 
 检查环境：
 
 ```powershell
 python --version
 node --version
-pnpm --version
+npm --version
 ```
 
-如果尚未安装 pnpm：
-
-```powershell
-npm install --global pnpm
-```
+启动脚本会优先使用 `pnpm`；如果电脑没有安装 `pnpm`，会自动使用 Node.js 自带的 `npm`，无需额外安装。
 
 ## 下载与安装
 
@@ -146,8 +141,8 @@ python -m venv .venv
 
 ```powershell
 cd frontend
-pnpm install
-pnpm dev --host 127.0.0.1 --port 4173
+npm install
+npm run dev -- --host 127.0.0.1 --port 4173
 ```
 
 ## 数据更新机制
@@ -182,18 +177,18 @@ cd backend
 .\.venv\Scripts\python.exe -m pytest tests -q
 
 cd ..\frontend
-pnpm build
+npm run build
 ```
 
 ## 常见问题
 
 ### 页面打不开
 
-确认 `start.ps1` 已显示启动成功，然后检查 `logs/backend-error.log` 和 `logs/frontend-error.log`。本项目使用后端端口 `8010` 和前端端口 `4173`。
+确认 `start.cmd` 已显示启动成功，然后检查 `logs/backend-error.log` 和 `logs/frontend-error.log`。本项目使用后端端口 `8010` 和前端端口 `4173`。
 
 ### `pnpm` 无法识别
 
-运行 `npm install --global pnpm`，安装后重新打开 PowerShell。
+无需安装 `pnpm`。更新到最新版代码后运行 `.\start.cmd`，启动脚本会自动改用 Node.js 自带的 `npm`。
 
 ### 盘中估值与其他平台不完全一致
 

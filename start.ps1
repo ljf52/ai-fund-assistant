@@ -5,7 +5,14 @@ $FrontendDir = Join-Path $ProjectRoot 'frontend'
 $LogDir = Join-Path $ProjectRoot 'logs'
 $BundledPython = (Get-Command python -ErrorAction Stop).Source
 $BundledNode = (Get-Command node -ErrorAction Stop).Source
-$BundledPnpm = (Get-Command pnpm -ErrorAction Stop).Source
+$PnpmCommand = Get-Command pnpm -ErrorAction SilentlyContinue
+$NpmCommand = Get-Command npm.cmd -ErrorAction SilentlyContinue
+if (-not $NpmCommand) {
+  $NpmCommand = Get-Command npm -ErrorAction SilentlyContinue
+}
+if (-not $PnpmCommand -and -not $NpmCommand) {
+  throw 'Neither pnpm nor npm was found. Install Node.js 20+ and reopen the terminal.'
+}
 $BackendPython = Join-Path $BackendDir '.venv\Scripts\python.exe'
 $ViteScript = Join-Path $FrontendDir 'node_modules\vite\bin\vite.js'
 
@@ -18,7 +25,19 @@ if (-not (Test-Path $BackendPython)) {
 }
 if (-not (Test-Path $ViteScript)) {
   Write-Host 'First run: installing frontend dependencies...'
-  & $BundledPnpm install --dir $FrontendDir
+  if ($PnpmCommand) {
+    & $PnpmCommand.Source install --dir $FrontendDir
+  } else {
+    Push-Location $FrontendDir
+    try {
+      & $NpmCommand.Source install
+    } finally {
+      Pop-Location
+    }
+  }
+  if ($LASTEXITCODE -ne 0) {
+    throw 'Frontend dependency installation failed.'
+  }
 }
 
 $ApiRunning = Get-NetTCPConnection -LocalPort 8010 -State Listen -ErrorAction SilentlyContinue
