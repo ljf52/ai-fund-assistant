@@ -74,12 +74,15 @@ SYNC_INTERVAL_MINUTES=360
 
 不要把真实密钥写入 `.env.example`，也不要提交本地 `.env` 文件。
 
-## 一键启动
+## 启动与暂停本地网站
 
-在项目根目录运行：
+### 启动
+
+打开 PowerShell，运行：
 
 ```powershell
-.\start.ps1
+cd "C:\Users\你的用户名\Documents\ChatGPT\基金规划"
+powershell -ExecutionPolicy Bypass -File .\start.ps1
 ```
 
 首次运行会自动创建 Python 虚拟环境并安装前后端依赖。启动完成后：
@@ -87,17 +90,37 @@ SYNC_INTERVAL_MINUTES=360
 - Web 页面：<http://127.0.0.1:4173>
 - API 文档：<http://127.0.0.1:8010/docs>
 
-停止服务：
+### 暂停
+
+需要关闭本地网站时，在 PowerShell 运行：
 
 ```powershell
-.\stop.ps1
+cd "C:\Users\你的用户名\Documents\ChatGPT\基金规划"
+powershell -ExecutionPolicy Bypass -File .\stop.ps1
 ```
 
-如果 PowerShell 禁止执行脚本，可以临时放行当前窗口：
+看到下面的提示表示停止命令已经执行：
+
+```text
+AI Fund Assistant stopped.
+```
+
+刷新 <http://127.0.0.1:4173> 后应显示无法访问。如果浏览器仍保留旧画面，按 `Ctrl + F5` 强制刷新；浏览器可能暂时显示已经加载到内存中的页面，但本地服务实际上已经停止。
+
+停止脚本会同时关闭：
+
+- 前端端口 `4173`
+- 后端端口 `8010`
+
+> `stop.ps1` 只会暂停当前电脑上的本地网站，不会关闭 GitHub Pages 在线演示版。在线演示仍可通过 <https://ljf52.github.io/ai-fund-assistant/> 访问。
+
+### 重新启动
+
+暂停后需要再次使用时，重新运行：
 
 ```powershell
-Set-ExecutionPolicy -Scope Process Bypass
-.\start.ps1
+cd "C:\Users\你的用户名\Documents\ChatGPT\基金规划"
+powershell -ExecutionPolicy Bypass -File .\start.ps1
 ```
 
 ## 手动启动
