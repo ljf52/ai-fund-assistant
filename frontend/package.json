@@ -1,0 +1,10 @@
+{
+  "name": "ai-fund-assistant-web",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {"dev": "vite", "build": "vite build", "preview": "vite preview"},
+  "dependencies": {"@vitejs/plugin-vue": "latest", "echarts": "^5.6.0", "vite": "latest", "vue": "^3.5.18"},
+  "devDependencies": {}
+}
+
