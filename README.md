@@ -78,10 +78,18 @@ SYNC_INTERVAL_MINUTES=360
 
 ### 启动
 
-打开 PowerShell，运行：
+先进入下载或克隆后的项目根目录，也就是能看到 `start.ps1` 和 `stop.ps1` 的文件夹。
+
+最简单的方法是在文件资源管理器中打开该文件夹，在地址栏输入 `powershell` 后按回车，然后运行：
 
 ```powershell
-cd "C:\Users\你的用户名\Documents\ChatGPT\基金规划"
+powershell -ExecutionPolicy Bypass -File .\start.ps1
+```
+
+也可以先用 `cd` 进入你实际保存项目的位置，例如：
+
+```powershell
+cd "D:\你实际保存项目的位置\ai-fund-assistant"
 powershell -ExecutionPolicy Bypass -File .\start.ps1
 ```
 
@@ -92,10 +100,9 @@ powershell -ExecutionPolicy Bypass -File .\start.ps1
 
 ### 暂停
 
-需要关闭本地网站时，在 PowerShell 运行：
+需要关闭本地网站时，在同一个项目根目录运行：
 
 ```powershell
-cd "C:\Users\你的用户名\Documents\ChatGPT\基金规划"
 powershell -ExecutionPolicy Bypass -File .\stop.ps1
 ```
 
@@ -116,10 +123,9 @@ AI Fund Assistant stopped.
 
 ### 重新启动
 
-暂停后需要再次使用时，重新运行：
+暂停后需要再次使用时，在项目根目录重新运行：
 
 ```powershell
-cd "C:\Users\你的用户名\Documents\ChatGPT\基金规划"
 powershell -ExecutionPolicy Bypass -File .\start.ps1
 ```
 
