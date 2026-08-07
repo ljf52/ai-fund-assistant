@@ -78,20 +78,22 @@ SYNC_INTERVAL_MINUTES=360
 
 ### 启动
 
-先进入下载或克隆后的项目根目录，也就是能看到 `start.ps1` 和 `stop.ps1` 的文件夹。
+先进入下载或克隆后的项目根目录，也就是能看到 `start.cmd` 和 `stop.cmd` 的文件夹。
 
 最简单的方法是在文件资源管理器中打开该文件夹，在地址栏输入 `powershell` 后按回车，然后运行：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\start.ps1
+.\start.cmd
 ```
 
 也可以先用 `cd` 进入你实际保存项目的位置，例如：
 
 ```powershell
 cd "D:\你实际保存项目的位置\ai-fund-assistant"
-powershell -ExecutionPolicy Bypass -File .\start.ps1
+.\start.cmd
 ```
+
+`start.cmd` 会自动用正确的 PowerShell 参数调用 `start.ps1`，无需修改电脑的执行策略。
 
 首次运行会自动创建 Python 虚拟环境并安装前后端依赖。启动完成后：
 
@@ -103,7 +105,7 @@ powershell -ExecutionPolicy Bypass -File .\start.ps1
 需要关闭本地网站时，在同一个项目根目录运行：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\stop.ps1
+.\stop.cmd
 ```
 
 看到下面的提示表示停止命令已经执行：
@@ -119,14 +121,14 @@ AI Fund Assistant stopped.
 - 前端端口 `4173`
 - 后端端口 `8010`
 
-> `stop.ps1` 只会暂停当前电脑上的本地网站，不会关闭 GitHub Pages 在线演示版。在线演示仍可通过 <https://ljf52.github.io/ai-fund-assistant/> 访问。
+> `stop.cmd` 只会暂停当前电脑上的本地网站，不会关闭 GitHub Pages 在线演示版。在线演示仍可通过 <https://ljf52.github.io/ai-fund-assistant/> 访问。
 
 ### 重新启动
 
 暂停后需要再次使用时，在项目根目录重新运行：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\start.ps1
+.\start.cmd
 ```
 
 ## 手动启动
