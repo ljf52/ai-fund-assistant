@@ -47,6 +47,23 @@ const realtimeItem = {
   disclaimer: '在线演示数据仅用于展示界面，不代表真实基金净值或收益。',
 }
 
+const prediction = {
+  supported: true, fund_code: holding.code, target_code: '515880', target_name: '通信ETF',
+  horizon: '下一交易日', as_of_date: today, up_probability: 0.6009, down_probability: 0.3991,
+  expected_return_pct: 0.67, lower_bound_pct: -3.24, upper_bound_pct: 4.41,
+  signal: '方向不明', confidence: '低', qualified: false,
+  status_message: '滚动回测尚未超过简单基准，本次概率仅供模型研究。', exposure_ratio: 0.91,
+  factors: [
+    { name: '5日均线距离', direction: 'positive', value: '+4.00%' },
+    { name: '60日趋势距离', direction: 'positive', value: '-13.74%' },
+    { name: '近10日动量', direction: 'positive', value: '+2.17%' },
+    { name: '短期波动率', direction: 'negative', value: '+3.87%' },
+  ],
+  validation: { accuracy: 0.5302, baseline_accuracy: 0.5357, auc: 0.5088, brier: 0.2567, validation_samples: 728, training_samples: 1616, method: '扩展窗口滚动验证（4折）' },
+  model_name: 'xgboost-direction-v1', training_basis: 'target_etf', data_source: '在线演示历史行情', source_warning: null, generated_at: quoteTime,
+  disclaimer: '概率来自历史行情模型，不保证未来结果；区间为近期历史分布估计，不是收益承诺。',
+}
+
 const report = {
   report_date: today,
   market_summary: '宽基指数小幅上涨，通信设备、电子等成长行业表现相对活跃。',
@@ -87,6 +104,7 @@ export async function demoRequest(path, options = {}) {
   if (route === '/reports/latest' || route === '/reports/generate') return clone(report)
   if (route === '/realtime/holdings') return clone({ items: [realtimeItem], summary: { supported: true, total: 1, estimated_today_profit: realtimeItem.estimated_today_profit, estimated_market_value: realtimeItem.estimated_market_value, quote_time: quoteTime } })
   if (route === `/realtime/funds/${holding.code}`) return clone(realtimeItem)
+  if (route === `/predictions/funds/${holding.code}`) return clone(prediction)
   if (route === `/funds/${holding.code}`) return clone(fund)
   if (route === '/search/funds') return clone([{ code: holding.code, name: holding.name, category: holding.category, latest_nav: holding.nav, nav_date: today }])
   if (route === '/data/sync') return { status: 'success', results: [], errors: [], finished_at: quoteTime }

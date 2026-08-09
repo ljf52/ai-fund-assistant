@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
 from .db import connection, init_db
+from .prediction import get_prediction
 from .real_data import data_status, realtime_estimate, realtime_holdings, search_funds, sync_all, sync_fund, sync_market
 from .schemas import HoldingCreate, HoldingUpdate
 from .services import dashboard, generate_report, holding_rows
@@ -147,6 +148,12 @@ async def get_realtime_fund(code: str):
     if not holding: raise HTTPException(404, "尚未持有该基金")
     try: return await asyncio.to_thread(realtime_estimate, code, holding["shares"], holding["cost_nav"])
     except Exception as exc: raise HTTPException(502, f"盘中估值失败：{exc}") from exc
+
+
+@app.get("/api/predictions/funds/{code}")
+async def fund_prediction(code: str, refresh: bool = False):
+    try: return await asyncio.to_thread(get_prediction, code, refresh)
+    except Exception as exc: raise HTTPException(502, f"走势概率生成失败：{exc}") from exc
 
 
 def market_session(now: datetime) -> tuple[str, str, bool]:

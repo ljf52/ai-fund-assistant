@@ -14,14 +14,25 @@ if (-not $PnpmCommand -and -not $NpmCommand) {
   throw 'Neither pnpm nor npm was found. Install Node.js 20+ and reopen the terminal.'
 }
 $BackendPython = Join-Path $BackendDir '.venv\Scripts\python.exe'
+$BackendRequirements = Join-Path $BackendDir 'requirements.txt'
+$RequirementsStamp = Join-Path $BackendDir '.venv\.requirements.sha256'
 $ViteScript = Join-Path $FrontendDir 'node_modules\vite\bin\vite.js'
 
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 
 if (-not (Test-Path $BackendPython)) {
-  Write-Host 'First run: preparing backend...'
+  Write-Host 'First run: creating backend environment...'
   & $BundledPython -m venv (Join-Path $BackendDir '.venv')
-  & $BackendPython -m pip install -r (Join-Path $BackendDir 'requirements.txt')
+}
+$RequirementsHash = (Get-FileHash -Algorithm SHA256 $BackendRequirements).Hash
+$InstalledHash = if (Test-Path $RequirementsStamp) { (Get-Content $RequirementsStamp -Raw).Trim() } else { '' }
+if ($InstalledHash -ne $RequirementsHash) {
+  Write-Host 'Preparing or updating backend dependencies...'
+  & $BackendPython -m pip install -r $BackendRequirements
+  if ($LASTEXITCODE -ne 0) {
+    throw 'Backend dependency installation failed.'
+  }
+  Set-Content -Path $RequirementsStamp -Value $RequirementsHash -Encoding ASCII
 }
 if (-not (Test-Path $ViteScript)) {
   Write-Host 'First run: installing frontend dependencies...'

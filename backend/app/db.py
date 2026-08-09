@@ -57,6 +57,13 @@ CREATE TABLE IF NOT EXISTS fund_realtime_mappings (
   source TEXT NOT NULL, updated_at TEXT NOT NULL,
   FOREIGN KEY(fund_code) REFERENCES funds(code)
 );
+CREATE TABLE IF NOT EXISTS prediction_runs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, fund_code TEXT NOT NULL,
+  target_code TEXT NOT NULL, as_of_date TEXT NOT NULL, horizon_days INTEGER NOT NULL DEFAULT 1,
+  model_name TEXT NOT NULL, payload_json TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(fund_code, target_code, as_of_date, horizon_days)
+);
 """
 
 

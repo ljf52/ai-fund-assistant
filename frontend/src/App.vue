@@ -14,6 +14,9 @@ const market = ref({ indices: [], industries: [] })
 const report = ref(null)
 const realtime = ref({ items: [], summary: {} })
 const selectedFund = ref(null)
+const prediction = ref(null)
+const predictionLoading = ref(false)
+const predictionError = ref('')
 const showAdd = ref(false)
 const generating = ref(false)
 const syncing = ref(false)
@@ -58,8 +61,24 @@ async function loadMarket(force = false) {
   finally { marketRefreshing.value = false }
 }
 async function chooseFund(code, navigate = true) {
-  try { selectedFund.value = await request(`/funds/${code}`); if (navigate) page.value = 'fund' }
+  try {
+    selectedFund.value = await request(`/funds/${code}`)
+    prediction.value = null; predictionError.value = ''
+    if (navigate) page.value = 'fund'
+    loadPrediction(code)
+  }
   catch (e) { error.value = e.message }
+}
+async function loadPrediction(code, refresh = false) {
+  predictionLoading.value = true; predictionError.value = ''
+  try {
+    const result = await request(`/predictions/funds/${code}${refresh ? '?refresh=true' : ''}`)
+    if (selectedFund.value?.code === code) prediction.value = result
+  } catch (e) {
+    if (selectedFund.value?.code === code) predictionError.value = e.message
+  } finally {
+    if (selectedFund.value?.code === code) predictionLoading.value = false
+  }
 }
 async function addHolding() {
   try {
@@ -183,6 +202,20 @@ onUnmounted(() => { window.clearInterval(realtimeTimer); window.clearInterval(ma
         <div class="fund-switch"><button v-for="h in holdings" :key="h.code" :class="{active:selectedFund.code===h.code}" @click="chooseFund(h.code,false)">{{ h.name }}</button></div>
         <section class="fund-head"><div><span>{{ selectedFund.category }} · {{ selectedFund.risk_level }}</span><h2>{{ selectedFund.name }}</h2><p>{{ selectedFund.code }} · {{ selectedFund.manager }}<template v-if="selectedFund.company"> · {{ selectedFund.company }}</template></p></div><div><label>官方净值 · {{ selectedFund.navs.at(-1)?.nav_date }}</label><strong>{{ selectedFund.navs.at(-1)?.nav.toFixed(4) }}</strong><em :class="selectedFund.navs.at(-1)?.daily_change>=0?'up':'down'">{{ pct(selectedFund.navs.at(-1)?.daily_change) }}</em><small class="source-line">{{ selectedFund.data_source || '演示数据' }}</small></div></section>
         <section v-if="selectedRealtime" class="realtime-strip"><div><label>盘中估算净值</label><strong>{{ selectedRealtime.estimated_nav.toFixed(4) }}</strong><em :class="selectedRealtime.estimated_change_pct>=0?'up':'down'">{{ pct(selectedRealtime.estimated_change_pct) }}</em></div><div><label>预计今日收益</label><strong :class="selectedRealtime.estimated_today_profit>=0?'up':'down'">{{ money(selectedRealtime.estimated_today_profit) }}</strong><small>累计估算 {{ money(selectedRealtime.estimated_total_profit) }}</small></div><div><label>估算依据</label><b>{{ selectedRealtime.method==='target_index' ? selectedRealtime.target_index_name : `${selectedRealtime.target_etf_name} ${selectedRealtime.target_etf_code}` }}</b><small>{{ pct(selectedRealtime.target_change_pct) }} × {{ (selectedRealtime.exposure_ratio*100).toFixed(0) }}% 暴露</small></div><div><label>更新时间</label><b>{{ selectedRealtime.quote_time.slice(11,19) }}</b><small>{{ selectedRealtime.quote_source }}</small></div><p>{{ selectedRealtime.disclaimer }}</p></section>
+        <section v-if="selectedFund.target_fund" class="prediction-panel" :class="{unqualified:prediction && !prediction.qualified}">
+          <div class="prediction-heading"><div><span>NEXT SESSION / EXPERIMENTAL</span><h3>下一交易日走势概率</h3><p v-if="prediction?.training_basis==='fund_nav'">目标 ETF 行情暂不可用，当前使用基金官方净值历史训练</p><p v-else>以 {{ selectedFund.target_fund.name }} 日线训练，再按 {{ (selectedFund.target_fund.exposure_ratio*100).toFixed(0) }}% 暴露映射到基金</p></div><button :disabled="predictionLoading" @click="loadPrediction(selectedFund.code,true)">{{ predictionLoading ? '计算中…' : '重新计算 ↻' }}</button></div>
+          <div v-if="predictionLoading && !prediction" class="prediction-loading"><i></i><span>正在进行时间序列回测与概率计算…</span></div>
+          <div v-else-if="predictionError" class="prediction-empty"><b>暂时无法生成概率</b><span>{{ predictionError }}</span></div>
+          <div v-else-if="prediction?.supported" class="prediction-body">
+            <div class="probability-main"><label>模型上涨概率</label><strong>{{ (prediction.up_probability*100).toFixed(1) }}<small>%</small></strong><div class="probability-track"><span>偏弱</span><i :style="{left:`${prediction.up_probability*100}%`}"></i><span>偏强</span></div><p>行情截至 {{ prediction.as_of_date }} · {{ prediction.horizon }}</p></div>
+            <div class="prediction-verdict"><span :class="prediction.qualified?'qualified':'research-only'">{{ prediction.qualified ? '通过当前基准' : '仅供模型研究' }}</span><h3>{{ prediction.signal }}</h3><p>{{ prediction.status_message }}</p></div>
+            <div class="prediction-stats"><div><span>预期涨跌中枢</span><b :class="prediction.expected_return_pct>=0?'up':'down'">{{ pct(prediction.expected_return_pct) }}</b></div><div><span>近期经验区间</span><b>{{ pct(prediction.lower_bound_pct) }} ～ {{ pct(prediction.upper_bound_pct) }}</b></div><div><span>可信度</span><b>{{ prediction.confidence }}</b></div></div>
+            <div class="prediction-factors"><span>模型主要影响因子</span><div><em v-for="factor in prediction.factors" :key="factor.name" :class="factor.direction"><i></i>{{ factor.name }} <small>{{ factor.value }}</small></em></div></div>
+            <div class="validation-strip"><span>滚动验证</span><b>准确率 {{ (prediction.validation.accuracy*100).toFixed(1) }}%</b><b>简单基准 {{ (prediction.validation.baseline_accuracy*100).toFixed(1) }}%</b><b>AUC {{ prediction.validation.auc.toFixed(3) }}</b><small>{{ prediction.validation.validation_samples }} 个样本 · {{ prediction.model_name }}</small></div>
+            <footer><template v-if="prediction.source_warning">数据提示：{{ prediction.source_warning }}<br></template>{{ prediction.disclaimer }}</footer>
+          </div>
+          <div v-else-if="prediction" class="prediction-empty"><b>暂不支持该基金</b><span>{{ prediction.reason }}</span></div>
+        </section>
         <section class="panel chart-panel"><div class="panel-title"><div><h3>近 90 日净值轨迹</h3><p>净值曲线用于观察趋势，不代表未来收益</p></div><span>业绩基准 · {{ selectedFund.benchmark }}</span></div><div id="nav-chart"></div></section>
         <div class="two-col"><section class="panel holdings-through"><div class="panel-title"><div><h3>{{ selectedFund.target_fund ? '目标 ETF 穿透持仓' : '最新披露股票持仓' }}</h3><p>{{ selectedFund.target_fund ? '还原联接基金实际暴露的底层股票' : '基金定期报告披露口径' }}</p></div><span>披露期 {{ selectedFund.underlying_position_date || selectedFund.position_date || '—' }}</span></div><div v-if="selectedFund.target_fund" class="exposure-route"><div><small>当前基金</small><b>{{ selectedFund.name }}</b><em>{{ selectedFund.code }}</em></div><i>→</i><div class="route-target"><small>主要持有</small><b>{{ selectedFund.target_fund.name }}</b><em>{{ selectedFund.target_fund.code }} · 约 {{ (selectedFund.target_fund.exposure_ratio*100).toFixed(0) }}% 暴露</em></div></div><div class="holding-list-head" v-if="selectedFund.target_fund"><span>目标 ETF 前十大股票</span><small>权重为 ETF 内部占比</small></div><template v-if="selectedFund.target_fund"><div class="top-row" v-for="(s,i) in selectedFund.underlying_holdings" :key="s.stock_code"><i>{{ i+1 }}</i><b>{{ s.stock_name }} <small>{{ s.stock_code }}</small></b><span>{{ s.weight }}%</span></div><div v-if="!selectedFund.underlying_holdings.length" class="mini-empty">目标 ETF 持仓尚未同步，请点击右上角“同步真实数据”</div></template><template v-else><div class="top-row" v-for="(s,i) in selectedFund.top_holdings" :key="s.stock_code"><i>{{ i+1 }}</i><b>{{ s.stock_name }} <small>{{ s.stock_code }}</small></b><span>{{ s.weight }}%</span></div><div v-if="!selectedFund.top_holdings.length" class="mini-empty">最新报告未披露直接股票持仓</div></template><footer v-if="selectedFund.target_fund">007818 自身的直接股票持仓不代表主要风险暴露，因此这里优先展示目标 ETF 的穿透结果。</footer></section><section class="panel insight"><label>✦ AI 观察</label><h3>趋势仍在，节奏比方向更重要</h3><p>当前净值处于近三个月相对高位。已有盈利仓位以持有为主，若计划增配，等待波动回落并分批执行。</p><small>以上内容仅作信息辅助，不构成投资建议。</small></section></div>
       </template>
